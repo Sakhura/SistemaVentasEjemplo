@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pagina Pago</title>
+	<link rel="stylesheet" href="css/styles.css">
+    <script src="https://js.stripe.com/v3/"></script>
+</head>
+<body>
+    <section class="payment-form">
+        <h2>Forma de Pago</h2>
+
+        <form id="payment-form">
+            <label for="card-element">Número de tarjeta</label>
+            <input id="card-element" class="stripe-element" placeholder="Enter card number">
+
+            <label for="amount">Monto</label>
+            <input type="number" id="amount" value="100">
+
+            <button type="submit">Pagar</button>
+        </form>
+    </section>
+
+    <script>
+        // Replace with your Stripe API key
+        const stripe = Stripe('pk_test_YOUR_STRIPE_KEY');
+
+        // Create an instance of Elements
+        const elements = stripe.elements();
+
+        // Create a card element
+        const cardElement = elements.create('card', {
+            style: {
+                base: {
+                    fontSize: '16px',
+                    color: '#323232',
+                    fontFamily: '"Helvetica Neue", Helvetica, Arial, sans-serif',
+                    fontSmoothing: 'antialiasing',
+                    ':focus': {
+                        color: '#424242',
+                    },
+                },
+            },
+        });
+
+        // Mount the card element to a DOM element
+        cardElement.mount('#card-element');
+
+        // Handle form submission
+        const form = document.getElementById('payment-form');
+        form.addEventListener('submit', async (event) => {
+            event.preventDefault();
+
+            // Create a payment method using the card element
+            const paymentMethod = await stripe.createPaymentMethod({
+                type: 'card',
+                card: cardElement,
+            });
+
+            if (paymentMethod.error) {
+                // Handle payment error
+                console.error(paymentMethod.error);
+                return;
+            }
+
+            // Send the payment method to your server to process the payment
+            const { amount } = document.getElementById('amount');
+            const data = {
+                paymentMethodId: paymentMethod.id,
+                amount: amount,
+            };
+
+            const response = await fetch('/payment', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(data),
+            });
+
+            if (response.ok) {
+                // Payment successful
+                console.log('Payment successful!');
+                // Redirect to a confirmation page or display a success message
+            } else {
+                // Payment failed
+                console.error('Payment failed:', response.statusText);
+                // Handle payment failure
+            }
+        });
+    </script>
+</body>
+</html>
